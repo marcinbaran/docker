@@ -1,32 +1,38 @@
-version: "3.9"
-services:
-  webserver:
-    container_name: PHP-webserver
-    build:
-      context: .
-      dockerfile: Dockerfile
-    volumes:
-      - ./www:/var/www/html
-    ports:
-      - 80:80
-    depends_on:
-      - mysql-db
+---
+version: "3"
 
-  mysql-db:
-    image: mysql:8.0
+services:
+  php-apache:
+    container_name: "${CONTAINER_NAME_PREFIX}-apache-php"
+    build: ./docker/php-apache
+    volumes:
+      - ${PATH_TO_SYMFONY_PROJECT}:/var/www/html
+    ports:
+      - "80:80"
+
+  db:
+    container_name: "${CONTAINER_NAME_PREFIX}-mariadb"
+    image: mariadb:latest
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: database
-      MYSQL_USER: user
-      MYSQL_PASSWORD: pass
+      - MARIADB_ROOT_USER=${ROOT_USER}
+      - MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=yes
+      - MARIADB_USER=${DB_USER}
+      - MARIADB_PASSWORD=${DB_PASSWORD}
+      - MARIADB_DATABASE=${DB_NAME}
+    volumes:
+      - ${PATH_TO_DB_DATA}:/var/lib/mysql:rw
     ports:
       - "3306:3306"
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    links:
-      - mysql-db
+
+  mailer:
+    container_name: "${CONTAINER_NAME_PREFIX}-mailer"
+    image: schickling/mailcatcher
     ports:
-      - "8081:80"
-    environment:
-      PMA_HOST: mysql-db
-      MYSQL_ROOT_PASSWORD: root
+      - "1025:1025"
+      - "1080:1080"
+
+  adminer:
+    container_name: "${CONTAINER_NAME_PREFIX}-adminer"
+    image: adminer
+    ports:
+      - "8080:8080"
